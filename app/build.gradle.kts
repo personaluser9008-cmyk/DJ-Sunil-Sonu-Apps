@@ -15,7 +15,6 @@ android {
         versionName = "1.0"
     }
 
-    // Ye setting dono (Java aur Kotlin) ko version 17 par layegi
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -38,4 +37,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.material3:material3")
+    
+    // DJ SUNIL SONU - Professional Audio Engine (ExoPlayer)
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-common:1.2.1")
 }
