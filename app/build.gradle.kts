@@ -38,7 +38,7 @@ dependencies {
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.material3:material3")
     
-    // DJ SUNIL SONU - Professional Audio Engine (ExoPlayer)
+    // DJ Audio Engine (ExoPlayer)
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-common:1.2.1")
 }
