@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.exoplayer.ExoPlayer
 
 class MainActivity : ComponentActivity() {
@@ -51,7 +52,7 @@ fun DjSunilSonuApp() {
         ) {
             Text("DJ SUNIL SONU", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
             Text("Premium Mixing Studio", color = Color.Cyan, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             if (currentScreen == "Mixer") {
                 MixerScreen()
@@ -62,7 +63,7 @@ fun DjSunilSonuApp() {
             }
         }
 
-        // Navigation Bar
+        // Floating Liquid Glass Navigation Bar
         Box(
             modifier = Modifier.align(Alignment.BottomCenter).padding(20.dp).fillMaxWidth().height(70.dp)
                 .clip(RoundedCornerShape(35.dp)).background(Color.White.copy(alpha = 0.1f))
@@ -92,50 +93,74 @@ fun NavItem(title: String, currentScreen: String, onClick: () -> Unit) {
 
 @Composable
 fun MixerScreen() {
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        DeckUI(modifier = Modifier.weight(1f), title = "DECK A")
-        Spacer(modifier = Modifier.width(10.dp))
-        DeckUI(modifier = Modifier.weight(1f), title = "DECK B")
+    // Crossfader for Deck A & B
+    var crossfader by remember { mutableStateOf(0.5f) }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            val volumeA = if (crossfader < 0.5f) 1f else 1f - ((crossfader - 0.5f) * 2f)
+            DeckUI(modifier = Modifier.weight(1f), title = "DECK A", crossfadeVol = volumeA)
+            
+            Spacer(modifier = Modifier.width(10.dp))
+            
+            val volumeB = if (crossfader > 0.5f) 1f else (crossfader * 2f)
+            DeckUI(modifier = Modifier.weight(1f), title = "DECK B", crossfadeVol = volumeB)
+        }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // Crossfader UI
+        Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.05f)).border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp)).padding(15.dp)) {
+            Text("CROSSFADER", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
+            Slider(
+                value = crossfader,
+                onValueChange = { crossfader = it },
+                colors = SliderDefaults.colors(thumbColor = Color.Cyan, activeTrackColor = Color.Cyan, inactiveTrackColor = Color.Gray)
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("A", color = Color.Cyan, fontWeight = FontWeight.Bold)
+                Text("B", color = Color.Cyan, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
 @Composable
-fun DeckUI(modifier: Modifier, title: String) {
+fun DeckUI(modifier: Modifier, title: String, crossfadeVol: Float) {
     val context = LocalContext.current
-    var volume by remember { mutableStateOf(0.5f) }
+    var baseVolume by remember { mutableStateOf(0.8f) }
+    var speed by remember { mutableStateOf(1.0f) }
     var isPlaying by remember { mutableStateOf(false) }
     var trackName by remember { mutableStateOf("No Track") }
 
-    // DJ Deck ka apna personal Music Player
     val player = remember { ExoPlayer.Builder(context).build() }
 
-    // File Manager se gaana uthane ka tool
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             trackName = "Track Loaded ✅"
             val mediaItem = MediaItem.fromUri(uri)
             player.setMediaItem(mediaItem)
             player.prepare()
-            isPlaying = false // Load hone par gaana pause rahega
+            isPlaying = false 
         }
     }
 
-    // Play aur Pause ka logic
     LaunchedEffect(isPlaying) {
         if (isPlaying) player.play() else player.pause()
     }
 
-    // Volume change ka logic
-    LaunchedEffect(volume) {
-        player.volume = volume
+    LaunchedEffect(baseVolume, crossfadeVol) {
+        player.volume = baseVolume * crossfadeVol
     }
 
-    // App band hone par music band karne ke liye
+    LaunchedEffect(speed) {
+        player.playbackParameters = PlaybackParameters(speed)
+    }
+
     DisposableEffect(Unit) {
         onDispose { player.release() }
     }
 
-    // UI Design
     Box(
         modifier = modifier.clip(RoundedCornerShape(20.dp)).background(Color.White.copy(alpha = 0.05f))
             .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(20.dp)).padding(10.dp)
@@ -144,24 +169,21 @@ fun DeckUI(modifier: Modifier, title: String) {
             Text(title, color = Color.Cyan, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(10.dp))
             
-            // Load Track Button
             Button(
-                onClick = { launcher.launch("audio/*") }, // Sirf audio files dikhayega
+                onClick = { launcher.launch("audio/*") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
                 modifier = Modifier.height(30.dp),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp)
             ) {
                 Text("LOAD MP3", color = Color.White, fontSize = 10.sp)
             }
-            
             Spacer(modifier = Modifier.height(5.dp))
             Text(trackName, color = if (trackName == "No Track") Color.Gray else Color.Green, fontSize = 10.sp)
             
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             
-            // Play/Pause Button
             Box(
-                modifier = Modifier.size(50.dp).clip(CircleShape)
+                modifier = Modifier.size(45.dp).clip(CircleShape)
                     .background(if (isPlaying) Color.Cyan.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f))
                     .border(1.dp, if (isPlaying) Color.Cyan else Color.Gray, CircleShape)
                     .clickable { isPlaying = !isPlaying },
@@ -170,13 +192,20 @@ fun DeckUI(modifier: Modifier, title: String) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = if (isPlaying) Color.Cyan else Color.White)
             }
             
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text("SPEED: ${speed.toString().take(3)}x", color = Color.Yellow, fontSize = 10.sp)
+            Slider(
+                value = speed,
+                onValueChange = { speed = it },
+                valueRange = 0.5f..1.5f,
+                colors = SliderDefaults.colors(thumbColor = Color.Yellow, activeTrackColor = Color.Yellow, inactiveTrackColor = Color.Gray)
+            )
             
-            // Volume Slider
             Text("VOL", color = Color.White, fontSize = 10.sp)
             Slider(
-                value = volume,
-                onValueChange = { volume = it },
+                value = baseVolume,
+                onValueChange = { baseVolume = it },
                 colors = SliderDefaults.colors(thumbColor = Color.Cyan, activeTrackColor = Color.Cyan)
             )
         }
