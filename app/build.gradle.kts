@@ -15,6 +15,16 @@ android {
         versionName = "1.0"
     }
 
+    // Ye setting dono (Java aur Kotlin) ko version 17 par layegi
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     buildFeatures {
         compose = true
     }
